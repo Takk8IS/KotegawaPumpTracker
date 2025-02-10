@@ -1,5 +1,5 @@
 // © 2025 David C Cavalcante
-// Version: 1.0.3
+// Version: 1.0.18
 // @version=6
 
 // =================================
@@ -64,8 +64,8 @@ midvol = input.float(0.5, "Medium Volatility Level", maxval=1, group="K-Means Se
 lowvol = input.float(0.25, "Low Volatility Level", maxval=1, group="K-Means Settings", tooltip="Low volatility level for accumulation detection")
 t1 = input.int(70, "Primary Transparency", maxval=100, minval=0, group="Appearance")
 t2 = input.int(95, "Secondary Transparency", maxval=100, minval=0, group="Appearance")
-green = input.color(#50FA7B, "Pump Color", group="Appearance")
-red = input.color(#FF5555, "Dump Color", group="Appearance")
+green = input.color(#00ffb3, "Pump Color", group="Appearance")
+red = input.color(#ff1130, "Dump Color", group="Appearance")
 
 // =============================
 // SuperTrend Adaptive Function
@@ -151,21 +151,21 @@ centroids.push(hv_new)
 centroids.push(mv_new)
 centroids.push(lv_new)
 
-cluster = distances.indexof(distances.min())  // 0 for high, 1 for medium, 2 for low
+cluster = distances.indexof(distances.min())
 assigned_centroid = cluster == -1 ? na : centroids.get(cluster)
 
 [ST, dir] = pine_supertrend(fact, assigned_centroid)
-upTrend = plot(close > ST ? ST : na, color=color.new(#50FA7B, t1), style=plot.style_linebr)
-downTrend = plot(close < ST ? ST : na, color=color.new(#FF5555, t1), style=plot.style_linebr, force_overlay=false)
+upTrend = plot(close > ST ? ST : na, color=color.new(#00ffb3, t1), style=plot.style_linebr)
+downTrend = plot(close < ST ? ST : na, color=color.new(#ff1130, t1), style=plot.style_linebr, force_overlay=false)
 bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, "Body Middle", display=display.none)
 
-fill(bodyMiddle, upTrend, (open + close) / 2, ST, color.new(#50FA7B, t2), color.new(#50FA7B, t1))
-fill(bodyMiddle, downTrend, ST, (open + close) / 2, color.new(#FF5555, t1), color.new(#FF5555, t2))
+fill(bodyMiddle, upTrend, (open + close) / 2, ST, color.new(#00ffb3, t2), color.new(#00ffb3, t1))
+fill(bodyMiddle, downTrend, ST, (open + close) / 2, color.new(#ff1130, t1), color.new(#ff1130, t2))
 
-plotshape(ta.crossunder(dir, 0) ? ST : na, "Pump Signal", shape.labelup, location=location.absolute, color=#50FA7B, text="🚀", textcolor=#F8F8F2, size=size.small)
-plotshape(ta.crossover(dir, 0) ? ST : na, "Dump Signal", shape.labeldown, location=location.absolute, color=#FF5555, text="💥", textcolor=#F8F8F2, size=size.small)
+plotshape(ta.crossunder(dir, 0) ? ST : na, "Pump Signal", shape.labelup, location=location.absolute, color=#00ffb3, text="🚀", textcolor=#dcf0ff, size=size.small)
+plotshape(ta.crossover(dir, 0) ? ST : na, "Dump Signal", shape.labeldown, location=location.absolute, color=#ff1130, text="💥", textcolor=#dcf0ff, size=size.small)
 
-label.new(bar_index, dir > 0 ? ST + ta.atr(7) : ST - ta.atr(7), text=str.tostring(4 - (cluster + 1)), style=label.style_none, textcolor=color.from_gradient(cluster + 1, 1, 3, color.new(dir > 0 ? #FF5555 : #50FA7B, 30), color.new(dir > 0 ? #FF5555 : #50FA7B, 90)))
+label.new(bar_index, dir > 0 ? ST + ta.atr(7) : ST - ta.atr(7), text=str.tostring(4 - (cluster + 1)), style=label.style_none, textcolor=color.from_gradient(cluster + 1, 1, 3, color.new(dir > 0 ? #ff1130 : #00ffb3, 30), color.new(dir > 0 ? #ff1130 : #00ffb3, 90)))
 
 // =============================
 // PREDICTION SETTINGS (Kotegawa Method)
@@ -173,9 +173,11 @@ label.new(bar_index, dir > 0 ? ST + ta.atr(7) : ST - ta.atr(7), text=str.tostrin
 rsiPeriod = input.int(14, "RSI Period (Kotegawa)", group="Prediction Settings")
 rsiValue = ta.rsi(close, rsiPeriod)
 volMA = ta.sma(volume, 20)
-forecastPrice = close + (close - close[1]) * (1 + volatility/100)  // Volatility adjusted forecast
+forecastPrice = close + (close - close[1]) * (1 + volatility/100)
 
+// =============================
 // Kotegawa prediction conditions
+// =============================
 pump_signal   = (rsiValue < 30) and (forecastPrice > close * 1.02) and (volume > volMA * 1.5)
 dump_signal   = (rsiValue > 70) and (forecastPrice < close * 0.98) and (volume > volMA * 1.5)
 rugpull_signal = (volume < volMA * 0.3) and (forecastPrice < close * 0.95) and (rsiValue < 40)
@@ -183,9 +185,9 @@ rugpull_signal = (volume < volMA * 0.3) and (forecastPrice < close * 0.95) and (
 // =============================
 // Kotegawa Signals
 // =============================
-pump_color = color.new(#50FA7B, 0)
-dump_color = color.new(#FF5555, 0)
-rug_color  = color.new(#BD93F9, 0)
+pump_color = color.new(#00ffb3, 0)
+dump_color = color.new(#ff1130, 0)
+rug_color  = color.new(#9100ff, 0)
 label_size = size.normal
 
 plotshape(pump_signal, title="Kotegawa Pump", style=shape.triangleup, location=location.belowbar, color=pump_color, size=size.large, offset=-1, text="💰")
@@ -193,11 +195,11 @@ plotshape(dump_signal, title="Kotegawa Dump", style=shape.triangledown, location
 plotshape(rugpull_signal, title="Possible Rug", style=shape.circle, location=location.abovebar, color=rug_color, size=size.small, offset=-1, text="⚠️")
 
 if pump_signal
-    label.new(bar_index, high, "🎯 PUMP", color=pump_color, textcolor=#F8F8F2, style=label.style_label_down, size=label_size)
+    label.new(bar_index, high, "🎯 PUMP", color=pump_color, textcolor=#dcf0ff, style=label.style_label_down, size=label_size)
 if dump_signal
-    label.new(bar_index, low, "⚡ DUMP", color=dump_color, textcolor=#F8F8F2, style=label.style_label_up, size=label_size)
+    label.new(bar_index, low, "⚡ DUMP", color=dump_color, textcolor=#dcf0ff, style=label.style_label_up, size=label_size)
 if rugpull_signal
-    label.new(bar_index, low, "⚠️ RISK", color=rug_color, textcolor=#F8F8F2, style=label.style_label_up, size=label_size)
+    label.new(bar_index, low, "⚠️ RISK", color=rug_color, textcolor=#dcf0ff, style=label.style_label_up, size=label_size)
 
 alertcondition(pump_signal, title="Kotegawa Pump Alert", message="Possible pump opportunity - Volume increasing!")
 alertcondition(dump_signal, title="Kotegawa Dump Alert", message="Possible dump - Consider protection!")
@@ -224,9 +226,9 @@ else
         level = lowerBound + (i / (orders_count - 1)) * (upperBound - lowerBound)
         array.push(orderLevels, level)
 
-plot(array.get(orderLevels, 0), title="Stop Loss", color=color.new(#FF5555, 0), style=plot.style_line, linewidth=2)
-plot(array.get(orderLevels, int(math.floor(orders_count / 2))), title="Entry", color=color.new(#50FA7B, 0), style=plot.style_line, linewidth=2)
-plot(array.get(orderLevels, orders_count - 1), title="Take Profit", color=color.new(#BD93F9, 0), style=plot.style_line, linewidth=2)
+plot(array.get(orderLevels, 0), title="Stop Loss", color=color.new(#ff1130, 0), style=plot.style_line, linewidth=2)
+plot(array.get(orderLevels, int(math.floor(orders_count / 2))), title="Entry", color=color.new(#00ffb3, 0), style=plot.style_line, linewidth=2)
+plot(array.get(orderLevels, orders_count - 1), title="Take Profit", color=color.new(#9100ff, 0), style=plot.style_line, linewidth=2)
 
-bgcolor(close >= array.get(orderLevels, 0) and close < array.get(orderLevels, int(math.floor(orders_count / 2))) ? color.new(#FF5555, 95) : na, title="Risk Zone")
-bgcolor(close >= array.get(orderLevels, int(math.floor(orders_count / 2))) and close <= array.get(orderLevels, orders_count - 1) ? color.new(#50FA7B, 95) : na, title="Opportunity Zone")
+bgcolor(close >= array.get(orderLevels, 0) and close < array.get(orderLevels, int(math.floor(orders_count / 2))) ? color.new(#ff1130, 95) : na, title="Risk Zone")
+bgcolor(close >= array.get(orderLevels, int(math.floor(orders_count / 2))) and close <= array.get(orderLevels, orders_count - 1) ? color.new(#ffe600, 95) : na, title="Opportunity Zone")
